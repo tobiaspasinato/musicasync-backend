@@ -1,44 +1,28 @@
-export interface Music {
-  id: string
-  title: string
-  artist: string
-  album?: string
-  duration?: number
-}
+import { type MusicRepository } from '../../../repository/index.js'
+import { type Music } from '../../../db/schema.js'
 
 export class MusicService {
-  private songs: Music[] = []
+  constructor(private musicRepository: MusicRepository) {}
 
   async getAllSongs(): Promise<Music[]> {
-    return this.songs
+    return await this.musicRepository.findAll()
   }
 
   async getSongById(id: string): Promise<Music | null> {
-    return this.songs.find(song => song.id === id) || null
+    const music = await this.musicRepository.findById(id)
+    return music || null
   }
 
-  async createSong(songData: Omit<Music, 'id'>): Promise<Music> {
-    const newSong: Music = {
-      id: Date.now().toString(),
-      ...songData
-    }
-    this.songs.push(newSong)
-    return newSong
+  async createSong(songData: Omit<Music, 'id' | 'createdAt' | 'updatedAt'>): Promise<Music> {
+    return await this.musicRepository.create(songData)
   }
 
-  async updateSong(id: string, songData: Partial<Omit<Music, 'id'>>): Promise<Music | null> {
-    const songIndex = this.songs.findIndex(song => song.id === id)
-    if (songIndex === -1) return null
-
-    this.songs[songIndex] = { ...this.songs[songIndex], ...songData }
-    return this.songs[songIndex]
+  async updateSong(id: string, songData: Partial<Omit<Music, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Music | null> {
+    const updatedMusic = await this.musicRepository.update(id, songData)
+    return updatedMusic || null
   }
 
   async deleteSong(id: string): Promise<boolean> {
-    const songIndex = this.songs.findIndex(song => song.id === id)
-    if (songIndex === -1) return false
-
-    this.songs.splice(songIndex, 1)
-    return true
+    return await this.musicRepository.delete(id)
   }
 }
